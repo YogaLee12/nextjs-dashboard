@@ -8,6 +8,7 @@ import {
     Revenue,
 } from './definitions';
 import { formatCurrency } from './utils';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export async function fetchRevenue() {
     try {
@@ -29,6 +30,7 @@ export async function fetchRevenue() {
 }
 
 export async function fetchLatestInvoices() {
+    noStore();
     try {
         const data = await sql<LatestInvoiceRaw>`
         SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
@@ -49,6 +51,7 @@ export async function fetchLatestInvoices() {
 }
 
 export async function fetchCardData() {
+    noStore();
     try {
         // You can probably combine these into a single SQL query
         // However, we are intentionally splitting them to demonstrate
@@ -82,13 +85,14 @@ export async function fetchCardData() {
     throw new Error('Failed to fetch card data.');
     }
 }
-
+// 每页显示的发票数量
 const ITEMS_PER_PAGE = 6;
 export async function fetchFilteredInvoices(
     query: string,
     currentPage: number,
 ) {
-  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+    noStore();
+    const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
     try {
     const invoices = await sql<InvoicesTable>`
@@ -120,6 +124,7 @@ export async function fetchFilteredInvoices(
 }
 
 export async function fetchInvoicesPages(query: string) {
+    noStore();
     try {
         const count = await sql`SELECT COUNT(*)
         FROM invoices
@@ -140,6 +145,7 @@ export async function fetchInvoicesPages(query: string) {
 }
 
 export async function fetchInvoiceById(id: string) {
+    noStore();
     try {
     const data = await sql<InvoiceForm>`
         SELECT
@@ -165,6 +171,7 @@ export async function fetchInvoiceById(id: string) {
 }
 
 export async function fetchCustomers() {
+    
     try {
     const data = await sql<CustomerField>`
         SELECT
@@ -183,6 +190,7 @@ export async function fetchCustomers() {
 }
 
 export async function fetchFilteredCustomers(query: string) {
+    noStore();
     try {
         const data = await sql<CustomersTableType>`
             SELECT
