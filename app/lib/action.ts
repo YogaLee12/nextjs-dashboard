@@ -19,7 +19,7 @@ const FormSchema = z.object({
     date: z.string(),
 });
 
-const CreateInvoice = FormSchema.omit({ id: true, date: true });
+
 
 export type State = {
     errors?: {
@@ -30,6 +30,8 @@ export type State = {
     message?: string | null;
 };
 
+
+const CreateInvoice = FormSchema.omit({ id: true, date: true });
 export async function createInvoice(prevState: State, formData: FormData) {
   // Validate form fields using Zod
     const validatedFields = CreateInvoice.safeParse({
@@ -72,25 +74,43 @@ export async function createInvoice(prevState: State, formData: FormData) {
 
 
 
-const UpdateInvoice = FormSchema.omit({ id:true, date: true });
-export async function updateInvoice(id: string, formData: FormData) {
-    const { customerId, amount, status } = UpdateInvoice.parse({
+const UpdateInvoice = FormSchema.omit({date: true, id:true  });
+
+export async function updateInvoice(
+    id: string,
+    prevState: State,
+    formData: FormData,
+) {
+    const validatedFields = UpdateInvoice.safeParse({
         customerId: formData.get('customerId'),
         amount: formData.get('amount'),
         status: formData.get('status'),
-        });
-    
-        const amountInCents = amount * 100;
-    
+    });
+
+    if (!validatedFields.success) {
+        return {
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: 'Missing Fields. Failed to Update Invoice.',
+        };
+    }
+
+    const { customerId, amount, status } = validatedFields.data;
+    const amountInCents = amount * 100;
+
+    try {
         await sql`
         UPDATE invoices
         SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
         WHERE id = ${id}
         `;
-    
-        revalidatePath('/dashboard/invoices');
-        redirect('/dashboard/invoices');
+    } catch (error) {
+        return { message: 'Database Error: Failed to Update Invoice.' };
+    }
+
+    revalidatePath('/dashboard/invoices');
+    redirect('/dashboard/invoices');
 }
+
 
 export async function deleteInvoice(id:string) {
     await sql `DELETE FROM invoices WHERE id = ${id}`;
